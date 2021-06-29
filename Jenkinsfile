@@ -2,12 +2,9 @@ pipeline {
 	agent any
     stages {
 		stage('Build Api') {
-			agent {
-				docker {
-					image 'node:latest'
-				}
-			}
+			agent any
             steps {
+					sh 'npm install'
 					sh 'npm run build'
 				}
             }
