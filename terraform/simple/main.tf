@@ -20,6 +20,24 @@ provider "aws" {
     }
   }
 }
+resource "aws_ebs_volume" "what_front_a" {
+  size              = "10"
+  availability_zone = data.aws_availability_zones.available.names[0]
+
+}
+resource "aws_network_interface" "what_front_a" {
+  subnet_id   = aws_subnet.what_pub_subnet_a.id
+  security_groups = [aws_security_group.what_front.id]
+  # vpc_security_group_ids = [aws_security_group.what_front.id]
+
+  private_ips = ["10.0.10.10"]
+  # security_groups = [aws_security_group.what_front.id]
+
+  # attachment {
+  #   instance     = aws_instance.what_front_a.id
+  #   device_index = 1
+  # }
+}
 
 resource "aws_instance" "what_front_a" {
   ami               = data.aws_ami.latest_ubuntu.id
@@ -28,11 +46,27 @@ resource "aws_instance" "what_front_a" {
 
   # security_groups = [aws_security_group.what_front.id]
   # user_data       = file(user_data_what_front.sh)
-  vpc_security_group_ids = [aws_security_group.what_front.id]
-  subnet_id              = aws_subnet.what_pub_subnet_a.id
+  # vpc_security_group_ids = [aws_security_group.what_front.id]
+  # ebs_block_device {
+  #   tags        = aws_vpc.what_vpc.tags_all
+  #   device_name = "/dev/sdb1"
+  # }
+  root_block_device {
+    volume_size = "10"
+    tags = {
+      ita_group = "Dp_206"
+    }
+  }
+  network_interface {
+    network_interface_id = aws_network_interface.what_front_a.id
+    device_index         = 0
+  }
+
+  # subnet_id = aws_subnet.what_pub_subnet_a.id
   tags = {
     Name = "Frontend-A"
   }
+
 
 }
 
@@ -178,9 +212,9 @@ resource "aws_elb" "what_front" {
 
 resource "aws_vpc" "what_vpc" {
   cidr_block = "10.0.0.0/16"
-  tags = {
-    Name = "What-VPC"
-  }
+  # tags = {
+  #   Name = "What-VPC"
+  # }
 }
 
 resource "aws_subnet" "what_pub_subnet_a" {
