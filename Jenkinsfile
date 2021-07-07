@@ -9,8 +9,13 @@ pipeline {
         stage('Build') { 
             steps {
                 sh 'npm install'
-				sh 'npm run build'
+		sh 'npm run build'
             }
         }
+	stage('Publish') {
+	    steps {
+		sh 'npm publish --registry=http://localhost:8081/repository/what-front'
+	    }
+	}
     }
 }
