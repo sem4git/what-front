@@ -13,3 +13,5 @@ terraform/.DS_Store
 .terraform/
 terraform/simple/terraform.tfstate
 terraform/simple/terraform.tfstate.backup
+terraform/full/terraform.tfstate
+terraform/full/terraform.tfstate.backup

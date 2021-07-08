@@ -55,28 +55,68 @@ resource "aws_security_group" "what_front" {
   #   },
   # ]
 }
+resource "aws_network_interface" "what_front_a" {
+  subnet_id   = aws_subnet.what_pub_subnet_a.id
+  security_groups = [aws_security_group.what_front.id]
+  # vpc_security_group_ids = [aws_security_group.what_front.id]
 
+  # private_ips = ["10.0.10.10"]
+  # security_groups = [aws_security_group.what_front.id]
+# tags = {
+#       ita_group = "Dp_206"
+#       Owner     = "Oleksandr Semeriaha"
+#     }
+  # attachment {
+  #   instance     = aws_instance.what_front_a.id
+  #   device_index = 1
+  # }
+}
 resource "aws_launch_template" "what_front" {
   name            = "Frontend-for-project-What-LT"
   image_id        = data.aws_ami.latest_ubuntu.id
   instance_type   = var.instance_type
   # security_groups = [aws_security_group.what_front.id]
   # user_data       = file(user_data_what_front.sh)
-
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      ita_group = "Dp_206"
+      Owner     = "Oleksandr Semeriaha"
+    }
+    
+  }
+  tag_specifications {
+    resource_type = "volume"
+    tags = {
+      ita_group = "Dp_206"
+      Owner     = "Oleksandr Semeriaha"
+    }
+    
+  }
+  network_interfaces {
+    associate_public_ip_address = true
+    network_interface_id = aws_network_interface.what_front_a.id
+  }
   lifecycle {
     create_before_destroy = true
   }
  }
-#resource "aws_launch_configuration" "what_front" {
+# resource "aws_launch_configuration" "what_front" {
 #   name            = "Frontend-for-project-What-LC"
 #   image_id        = data.aws_ami.latest_ubuntu.id
 #   instance_type   = var.instance_type
 #   security_groups = [aws_security_group.what_front.id]
 #   # user_data       = file(user_data_what_front.sh)
+  
+#   root_block_device {
+#     volume_size = "10"
+#   }
 
 #   lifecycle {
 #     create_before_destroy = true
 #   }
+
+
 #   # tag = {
 #   #     key                 = "ita_group"
 #   #     value               = "Dp_206"
@@ -102,7 +142,7 @@ resource "aws_autoscaling_group" "what_front" {
   min_size             = 2
   max_size             = 2
   min_elb_capacity     = 2
-  vpc_zone_identifier  = [aws_subnet.what_pub_subnet_a.id, aws_subnet.what_pub_subnet_a.id]
+  vpc_zone_identifier  = [aws_subnet.what_pub_subnet_a.id/*, aws_subnet.what_pub_subnet_b.id*/]
   health_check_type    = "EC2"
   load_balancers       = [aws_elb.what_front.id]
 
