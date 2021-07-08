@@ -126,5 +126,8 @@
       "^@components(.*)$": ["<rootDir>/src/components/$1"],
       "^.+\\.(css|less|scss)$": "babel-jest"
     }
-  }
+  },
+  "publishConfig": {
+	    "registry":"http://localhost:8081/repository/what-front/"
+	}
 }
