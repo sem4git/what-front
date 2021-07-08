@@ -14,6 +14,7 @@ pipeline {
         }
 	stage('Publish') {
 	    steps {
+		sh 'npm config set registry http://localhost:8081/repository/what-front/'
 		sh 'npm publish --registry=http://localhost:8081/repository/what-front/'
 	    }
 	}
