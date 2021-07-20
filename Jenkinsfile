@@ -6,10 +6,16 @@ pipeline {
         }
     }
     stages {
+	     environment {
+            scannerHome = tool 'SonarScanner'
+        }
         stage('Build') { 
             steps {
+		withSonarQubeEnv('sonar') {
+		sh "${scannerHome}/bin/sonar-scanner"
                 sh 'npm install --no-package-lock'
 		sh 'npm run build'
+		}
             }
         }
 	stage('Publish') {
