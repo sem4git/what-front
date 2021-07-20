@@ -8,14 +8,24 @@ pipeline {
     stages {
         
         stage('Build') { 
-		environment {
+            steps {
+                sh 'npm install --no-package-lock'
+		sh 'npm run build'
+            }
+        }
+	stage('SonarQube Analysis') { 
+		agent {
+        docker {
+            image 'openjdk' 
+            args '-p 3000:3000 --network host' 
+        }
+    }
+	environment {
             scannerHome = tool 'SonarScanner'
 			}
             steps {
 		withSonarQubeEnv('sonar') {
 		sh "${scannerHome}/bin/sonar-scanner"
-                sh 'npm install --no-package-lock'
-		sh 'npm run build'
 		}
             }
         }
