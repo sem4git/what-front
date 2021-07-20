@@ -6,10 +6,11 @@ pipeline {
         }
     }
     stages {
-        }
+        
         stage('Build') { 
 		environment {
             scannerHome = tool 'SonarScanner'
+			}
             steps {
 		withSonarQubeEnv('sonar') {
 		sh "${scannerHome}/bin/sonar-scanner"
