@@ -128,6 +128,6 @@
     }
   },
   "publishConfig": {
-	    "registry":"http://nexus-loadb-6puu3e2x3dzt-1303686621.us-east-2.elb.amazonaws.com/repository/what-front/"
+	    "registry":"http://nexus-loadb-14bw8x0x1t2sn-1984403832.us-east-2.elb.amazonaws.com/repository/what-front/"
 	}
 }
