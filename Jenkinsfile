@@ -1,9 +1,8 @@
 pipeline {
     agent {
-        docker {
-            image 'node:10.19.0' 
-            args '-p 3000:3000 --network host' 
-        }
+        agent {
+		label 'docker-dotnet'
+	}	
     }
     stages {
         
@@ -13,13 +12,7 @@ pipeline {
 		sh 'npm run build'
             }
         }
-	stage('SonarQube Analysis') { 
-		agent {
-        docker {
-            image 'openjdk' 
-            args '-p 3000:3000 --network host' 
-        }
-    }
+	stage('SonarQube Analysis') {
 	environment {
             scannerHome = tool 'SonarScanner'
 			}
