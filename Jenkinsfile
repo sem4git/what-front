@@ -6,7 +6,6 @@ pipeline {
         
         stage('Build') { 
             steps {
-                sh 'npm install --no-package-lock'
 		sh 'npm run build'
             }
         }
