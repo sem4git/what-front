@@ -128,6 +128,6 @@
     }
   },
   "publishConfig": {
-	    "registry":"http://localhost:8081/repository/what-front/"
+	    "registry":"http://nexus-loadb-14bw8x0x1t2sn-1984403832.us-east-2.elb.amazonaws.com/repository/what-front/"
 	}
 }
