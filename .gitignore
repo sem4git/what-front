@@ -11,6 +11,8 @@
 terraform/.DS_Store
 .terraform.lock.hcl
 .terraform/
+terraform/front/.terraform.lock.hcl
+terraform/front/.terraform/
 terraform/simple/terraform.tfstate
 terraform/simple/terraform.tfstate.backup
 terraform/full/terraform.tfstate
