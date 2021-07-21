@@ -1,9 +1,7 @@
 pipeline {
-    agent {
         agent {
 		label 'docker-dotnet'
 	}	
-    }
     stages {
         
         stage('Build') { 
