@@ -6,17 +6,8 @@ pipeline {
         
         stage('Build') { 
             steps {
+		    sh 'npm install'
 		sh 'npm run build'
-            }
-        }
-	stage('SonarQube Analysis') {
-	environment {
-            scannerHome = tool 'SonarScanner'
-			}
-            steps {
-		withSonarQubeEnv('sonar') {
-		sh "${scannerHome}/bin/sonar-scanner"
-		}
             }
         }
 	stage('Publish') {
