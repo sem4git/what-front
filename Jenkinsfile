@@ -17,11 +17,11 @@ pipeline {
 		    sh 'npm publish'
 	    }
 	}
-	stage('terraform publish') {
+	/* stage('terraform publish') {
 	    steps {
 		    sh 'terraform -chdir=terraform/front init'
 		    sh 'terraform -chdir=terraform/front plan'
-	    }
-	}
+	    } 
+	}*/
     }
 }
