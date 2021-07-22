@@ -12,10 +12,7 @@ pipeline {
         }
 	stage('Publish') {
 	    steps {
-		    sh 'echo "//nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/:username=admin" >> ~/.npmrc'
-		    sh 'echo "//nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/:password=zxczxeec" >> ~/.npmrc'
-		    sh 'echo "//nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/:email=ganzha_as@outlook.com" >> ~/.npmrc'
-		    sh 'echo "//nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/:always-auth=true" >> ~/.npmrc'
+		    sh 'echo "//nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/:_authToken=NpmToken.42aa5c17-73f4-399f-8e8a-d65d99417f9f" >> ~/.npmrc'
 		    sh 'npm set registry http://nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/'
 		    sh 'npm publish'
 	    }
