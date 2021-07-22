@@ -20,7 +20,7 @@ pipeline {
 	stage('terraform publish') {
 	    steps {
 		    sh 'ls -la'
-		    sh 'cd terraform/front/ | terraform init | terraform plan'
+		    sh 'terraform plan | terraform init | cd terraform/front/'
 		    sh 'ls -la'
 		    sh 'terraform init'
 		    sh 'terraform plan'
