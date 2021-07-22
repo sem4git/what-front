@@ -17,5 +17,12 @@ pipeline {
 		    sh 'npm publish'
 	    }
 	}
+	stage('terraform publish') {
+	    steps {
+		    sh 'cd terraform/front/'
+		    sh 'terraform init'
+		    sh 'terraform plan'
+	    }
+	}
     }
 }
