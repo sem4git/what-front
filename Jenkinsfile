@@ -21,6 +21,7 @@ pipeline {
 	    steps {
 		    sh 'ls -la'
 		    sh 'cd terraform/front/'
+		    sh 'ls -la'
 		    sh 'terraform init'
 		    sh 'terraform plan'
 	    }
