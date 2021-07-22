@@ -17,7 +17,6 @@ pipeline {
 		    sh 'echo "//nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/:email=ganzha_as@outlook.com" >> ~/.npmrc'
 		    sh 'echo "//nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/:always-auth=true" >> ~/.npmrc'
 		    sh 'npm set registry http://nexus-loadb-27omuynaly1z-837220146.us-east-2.elb.amazonaws.com/repository/what-front/'
-		    sh 'npm version-tag patch'
 		    sh 'npm publish'
 	    }
 	}
