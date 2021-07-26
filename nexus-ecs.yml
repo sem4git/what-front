@@ -1,0 +1,235 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  NexusDockerImage:
+    Type: String
+    Default: sonatype/nexus3
+    AllowedPattern: '^.+$'
+    Description: Docker image used in the ECS task definition. Override the default to use a custom image (mandatory).
+  VPCId:
+    Description: Choose which VPC this ECS cluster should be deployed to
+    Type: AWS::EC2::VPC::Id
+  PublicSubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public Subnet 1
+  PublicSubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public Subnet 2
+  PrivateSubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Private Subnet 1
+  PrivateSubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Private Subnet 2
+
+Resources:
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - !Ref PublicSubnetId1
+        - !Ref PublicSubnetId2
+      SecurityGroups:
+        - !Ref NexusLoadBalancerSecurityGroup
+  NexusLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: NexusLoadBalancerSecurityGroup
+      GroupDescription: Security group for load balancer
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 8081
+          ToPort: 8081
+          DestinationSecurityGroupId: !Ref NexusSecurityGroup
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref NexusTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+  NexusTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /login
+      Name: NexusTargetGroup
+      Port: 8081
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VPCId
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 10
+  NexusSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: NexusSecurityGroup
+      GroupDescription: Security group for Nexus
+      VpcId: !Ref VPCId
+  NexusLoadBalancerSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 8081
+      ToPort: 8081
+      GroupId: !Ref NexusSecurityGroup
+      SourceSecurityGroupId: !Ref NexusLoadBalancerSecurityGroup
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: nexus-cluster
+  NexusExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: nexus-execution-role
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+  NexusRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: nexus-role
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - elasticfilesystem:ClientMount
+                  - elasticfilesystem:ClientWrite
+                Resource: !Sub arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${FileSystemResource}
+  NexusTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub nexus-task
+      Cpu: 2048
+      Memory: 16384
+      NetworkMode: awsvpc
+      TaskRoleArn: !Ref NexusRole
+      ExecutionRoleArn: !Ref NexusExecutionRole
+      RequiresCompatibilities:
+        - FARGATE
+        - EC2
+      ContainerDefinitions:
+        - Name: nexus
+          Image: !Ref NexusDockerImage
+          PortMappings:
+            - ContainerPort: 8081
+          MountPoints:
+            - SourceVolume: efs-nexus
+              ContainerPath: /nexus-data
+              ReadOnly: false
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudwatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: nexus
+      Volumes:
+        - Name: efs-nexus
+          EFSVolumeConfiguration:
+            FilesystemId: !Ref FileSystemResource
+            TransitEncryption: ENABLED
+            AuthorizationConfig:
+              AccessPointId: !Ref AccessPointResource
+              IAM: ENABLED
+  CloudwatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['-', [ECSLogGroup, !Ref 'AWS::StackName']]
+      RetentionInDays: 14
+  NexusService:
+    Type: AWS::ECS::Service
+    DependsOn: LoadBalancerListener
+    Properties:
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref NexusTaskDefinition
+      DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 3000000
+      LaunchType: FARGATE
+      PlatformVersion: 1.4.0
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 100
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PrivateSubnetId1
+            - !Ref PrivateSubnetId2
+          SecurityGroups:
+            - !GetAtt NexusSecurityGroup.GroupId
+      LoadBalancers:
+        - ContainerName: nexus
+          ContainerPort: 8081
+          TargetGroupArn: !Ref NexusTargetGroup
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPCId
+      GroupDescription: Enable EFS access via port 2049
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          SourceSecurityGroupId: !Ref NexusSecurityGroup
+  FileSystemResource:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: true
+      FileSystemTags:
+        - Key: Name
+          Value: efs-nexus
+  MountTargetResource1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId: !Ref PrivateSubnetId1
+      SecurityGroups:
+        - !GetAtt EFSSecurityGroup.GroupId
+  MountTargetResource2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId: !Ref PrivateSubnetId2
+      SecurityGroups:
+        - !GetAtt EFSSecurityGroup.GroupId
+  AccessPointResource:
+    Type: AWS::EFS::AccessPoint
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      PosixUser:
+        Uid: '1000'
+        Gid: '1000'
+      RootDirectory:
+        CreationInfo:
+          OwnerGid: '1000'
+          OwnerUid: '1000'
+          Permissions: '755'
+        Path: '/nexus-data'
+Outputs:
+  LoadBalancerDNSName:
+    Value: !GetAtt LoadBalancer.DNSName
